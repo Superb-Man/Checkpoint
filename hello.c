@@ -8,7 +8,7 @@ main() {
 
     printf("PID is : %d\n", getpid());
 
-    while(1) {
+    while(cnt < 50) {
         printf("Count is : %d\n", cnt++);
         sleep(1);
         fflush(stdout);

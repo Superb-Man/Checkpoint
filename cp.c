@@ -8,8 +8,8 @@
 #include <fcntl.h>
 #include <ucontext.h>
 #include <signal.h>
-
-// Global contructor that gets called even before main
+#include <sys/syscall.h>
+#include <asm/prctl.h>
 
 void checkpoint();
 static volatile sig_atomic_t flag = 0;
@@ -19,6 +19,7 @@ signal_handler(int signum) {
     (void)signum;
     checkpoint();
 }
+
 __attribute__((constructor))
 void myconstructor() {
     struct sigaction sa = {0};
@@ -31,8 +32,8 @@ void myconstructor() {
     }
 
 struct memory_region {
-    void *start_addr;
-    void *end_addr;
+    void* start_addr;
+    void* end_addr;
     int  is_r;
     int  is_w;
     int  is_x;
@@ -60,7 +61,7 @@ print_process_memory() {
 
 int 
 parse_mem(char* line, struct memory_region* mr) {
-    char *ep;
+    char* ep;
     printf("line is %s\n", line);
     unsigned long long start = strtoull(line, &ep, 16);
     printf("start_address is %p\n", (void*)start);
@@ -69,18 +70,18 @@ parse_mem(char* line, struct memory_region* mr) {
     
     // ep is on '-'
     // Now start of end address, advance to 1 byte from ep
-    const char *s2 = ep + 1;
+    const char* s2 = ep + 1;
 
     unsigned long long end = strtoull(s2, &ep, 16);
     if (ep == s2 || *ep != ' ')
         return 0;
 
-    const char *perms = ep + 1;              /* e.g. "r-xp" */
+    const char* perms = ep + 1;              /* e.g. "r-xp" */
     if (strlen(perms) < 4)
         return 0;
 
-    mr->start_addr    = (void *)start;
-    mr->end_addr      = (void *)end;
+    mr->start_addr    = (void* )start;
+    mr->end_addr      = (void* )end;
     mr->is_r          = (perms[0] == 'r');
     mr->is_w          = (perms[1] == 'w');
     mr->is_x          = (perms[2] == 'x');
@@ -104,6 +105,12 @@ checkpoint() {
         printf("Error opening output file: %s\n", strerror(errno));
         exit(1);
     }
+
+    unsigned long fs_base;
+
+    syscall(SYS_arch_prctl, ARCH_GET_FS, &fs_base);
+
+    fwrite(&fs_base, sizeof(fs_base), 1, ofp);
 
     ucontext_t context;
 
@@ -156,6 +163,8 @@ checkpoint() {
     // free(line);
     fclose(ifp);
     fclose(ofp);
+
+    printf("Checkpointing done successfully\n");
 
     return;
     
