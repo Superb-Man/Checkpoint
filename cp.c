@@ -62,9 +62,9 @@ print_process_memory() {
 int 
 parse_mem(char* line, struct memory_region* mr) {
     char* ep;
-    printf("line is %s\n", line);
+    // printf("line is %s\n", line);
     unsigned long long start = strtoull(line, &ep, 16);
-    printf("start_address is %p\n", (void*)start);
+    // printf("start_address is %p\n", (void*)start);
     if (ep == line || *ep != '-')
         return 0;
     
@@ -160,7 +160,7 @@ checkpoint() {
         
     }
 
-    // free(line);
+    free(line);
     fclose(ifp);
     fclose(ofp);
 

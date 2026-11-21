@@ -238,7 +238,7 @@ main(int argc, char *argv[]) {
     size_t stack_size = 1 << 20;
 
     // void* stack_top = (char *)get_temp_stack() + stack_size;
-    void* stack_top = (char*) find_temp_stack(checkpoint_image, stack_size) + stack_size;
+    void* stack_top = (char*) get_temp_stack() + stack_size;
     __asm__ volatile("mov %0, %%rsp" :: "r"(stack_top) : "memory");
 
     restore(checkpoint_image);
